@@ -27,14 +27,20 @@ class User {
   // Create a new user
   static async create({ username, password, type, uid }) {
     try {
+      // Check if username already exists
+      const existingUser = await this.findByUsername(username);
+      if (existingUser) {
+        throw new Error('Username already exists');
+      }
+      
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
-      
+
       const [result] = await pool.query(
         'INSERT INTO users (username, password, type, uid, currentToken) VALUES (?, ?, ?, ?, ?)',
         [username, hashedPassword, type, uid || null, '']
       );
-      
+
       const id = result.insertId;
       return { id, username, type, uid };
     } catch (error) {
@@ -46,6 +52,14 @@ class User {
   // Update a user
   static async update(id, { username, password, type, uid }) {
     try {
+      // If username is being updated, check if it already exists for another user
+      if (username) {
+        const existingUser = await this.findByUsername(username);
+        if (existingUser && existingUser.id !== parseInt(id)) {
+          throw new Error('Username already exists');
+        }
+      }
+
       let query = 'UPDATE users SET ';
       const params = [];
       const updates = [];
@@ -71,18 +85,26 @@ class User {
         params.push(uid);
       }
 
+      // Only proceed with update if there are fields to update
+      if (updates.length === 0) {
+        return this.getById(id); // Return current user if no updates
+      }
+
       query += updates.join(', ') + ' WHERE id = ?';
       params.push(id);
 
       const [result] = await pool.query(query, params);
-      
+
       if (result.affectedRows === 0) {
         return null;
       }
-      
+
       return this.getById(id);
     } catch (error) {
       console.error(`Error updating user with ID ${id}:`, error);
+      if (error.message === 'Username already exists') {
+        throw error; // Rethrow the specific error
+      }
       throw new Error('Failed to update user');
     }
   }

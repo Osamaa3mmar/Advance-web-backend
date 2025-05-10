@@ -53,13 +53,27 @@ const userResolvers = {
       };
     },
     createUser: async (_, { input }) => {
-      return await User.create(input);
+      try {
+        return await User.create(input);
+      } catch (error) {
+        if (error.message === 'Username already exists') {
+          throw new Error('Username already exists. Please choose a different username.');
+        }
+        throw error;
+      }
     },
     updateUser: async (_, { id, input }, { user }) => {
       if (!user || (user.id !== parseInt(id) && user.type !== 'admin')) {
         throw new Error('Not authorized');
       }
-      return await User.update(id, input);
+      try {
+        return await User.update(id, input);
+      } catch (error) {
+        if (error.message === 'Username already exists') {
+          throw new Error('Username already exists. Please choose a different username.');
+        }
+        throw error;
+      }
     },
     deleteUser: async (_, { id }, { user }) => {
       if (!user || (user.id !== parseInt(id) && user.type !== 'admin')) {
