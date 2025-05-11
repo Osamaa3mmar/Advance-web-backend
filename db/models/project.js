@@ -26,6 +26,14 @@ class Project {
   // Create a new project
   static async create({ name, startDate, endDate, description, status, category }) {
     try {
+      // Validate dates
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      if (start > end) {
+        throw new Error('Start date cannot be after end date');
+      }
+      
       const [result] = await pool.query(
         'INSERT INTO projects (name, startDate, endDate, description, status, category) VALUES (?, ?, ?, ?, ?, ?)',
         [name, startDate, endDate, description, status, category]
@@ -35,13 +43,37 @@ class Project {
       return { id, name, startDate, endDate, description, status, category };
     } catch (error) {
       console.error('Error creating project:', error);
-      throw new Error('Failed to create project');
+      throw new Error(error.message || 'Failed to create project');
     }
   }
 
   // Update a project
   static async update(id, { name, startDate, endDate, description, status, category }) {
     try {
+      // If both dates are provided, validate them
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (start > end) {
+          throw new Error('Start date cannot be after end date');
+        }
+      } 
+      // If only one date is provided, we need to check against the existing date
+      else if (startDate || endDate) {
+        const project = await this.getById(id);
+        if (!project) {
+          throw new Error('Project not found');
+        }
+        
+        const start = startDate ? new Date(startDate) : new Date(project.startDate);
+        const end = endDate ? new Date(endDate) : new Date(project.endDate);
+        
+        if (start > end) {
+          throw new Error('Start date cannot be after end date');
+        }
+      }
+      
       let query = 'UPDATE projects SET ';
       const params = [];
       const updates = [];
@@ -88,16 +120,32 @@ class Project {
       return this.getById(id);
     } catch (error) {
       console.error(`Error updating project with ID ${id}:`, error);
-      throw new Error('Failed to update project');
+      throw new Error(error.message || 'Failed to update project');
     }
   }
 
   // Delete a project
   static async delete(id) {
     try {
+      // Start a transaction
+      await pool.query('START TRANSACTION');
+      
+      // First, delete all tasks associated with the project
+      await pool.query('DELETE FROM tasks WHERE project_ID = ?', [id]);
+      
+      // Then, remove all user-project associations
+      await pool.query('DELETE FROM user_project WHERE project_ID = ?', [id]);
+      
+      // Finally, delete the project
       const [result] = await pool.query('DELETE FROM projects WHERE id = ?', [id]);
+      
+      // Commit the transaction
+      await pool.query('COMMIT');
+      
       return result.affectedRows > 0;
     } catch (error) {
+      // Rollback in case of error
+      await pool.query('ROLLBACK');
       console.error(`Error deleting project with ID ${id}:`, error);
       throw new Error('Failed to delete project');
     }
@@ -132,6 +180,7 @@ class Project {
   // Assign user to project
   static async assignUser(projectId, userId) {
     try {
+      console.log(projectId, userId, "projectId, userId");
       await pool.query(
         'INSERT INTO user_project (user_ID, project_ID) VALUES (?, ?)',
         [userId, projectId]
