@@ -56,13 +56,13 @@ const typeDefs = gql`
   }
 
   type Message {
-    id: ID!
+    id: ID
     sender_ID: ID!
     recever_ID: ID!
     payload: String!
-    timestamp: String!
-    sender: User!
-    receiver: User!
+    timestamp: String
+    sender: User
+    receiver: User
   }
 
   type AuthPayload {
