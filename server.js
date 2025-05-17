@@ -1,10 +1,13 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
+import http from 'http'; // ✅ required for raw server
+import { Server as SocketIOServer } from 'socket.io'; // ✅ Socket.IO
 import typeDefs from './db/schemas/typeDefs.js';
 import resolvers from './db/resolvers/index.js';
 import getUser from './middleware/auth.js';
 import { testConnection } from './db/connection.js';
 import dotenv from 'dotenv';
+import Message from './db/models/message.js';
 
 dotenv.config();
 
@@ -15,18 +18,16 @@ async function startServer() {
   // Initialize Express application
   const app = express();
 
-  // Create Apollo Server
+  // Create raw HTTP server from Express
+  const httpServer = http.createServer(app);
+
+  // Initialize Apollo Server
   const server = new ApolloServer({
     typeDefs,
     resolvers,
     context: ({ req }) => {
-      // Get the user token from the headers
       const token = req.headers.authorization || '';
-      
-      // Try to retrieve a user with the token
       const user = getUser(token);
-      
-      // Add the user to the context
       return { user };
     },
     formatError: (error) => {
@@ -38,19 +39,60 @@ async function startServer() {
     }
   });
 
-  // Start Apollo Server
   await server.start();
-
-  // Apply middleware
   server.applyMiddleware({ app });
 
-  // Set port
-  const PORT = process.env.PORT || 4001;
+  // ✅ Initialize Socket.IO server
+  const io = new SocketIOServer(httpServer, {
+    cors: {
+      origin: 'http://localhost:3001', // or wherever your frontend is hosted
+      methods: ['GET', 'POST']
+    }
+  });
 
-  // Start Express server
-  app.listen(PORT, () => {
-    console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`);
-    console.log(`GraphQL Playground available at http://localhost:${PORT}${server.graphqlPath}`);
+  // ✅ Setup Socket.IO connection and private messaging logic
+  const users = {};
+  const usernames = {};
+
+  io.on('connection', (socket) => {
+    console.log('New socket connected:', socket.id);
+
+    socket.on('login', (username) => {
+      users[socket.id] = username;
+      usernames[username] = socket.id;
+      console.log(`${username} registered`);
+    });
+
+    
+    socket.on('messageTo', (message ) => {
+      const targetSocketId = usernames[message.recever_ID];
+      console.log(message.recever_ID)
+      console.log(usernames)
+
+      if (targetSocketId) {
+              console.log(targetSocketId)
+
+        io.to(targetSocketId).emit('newMsg', 
+         message
+        );
+
+        Message.create(message);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      const username = users[socket.id];
+      delete usernames[username];
+      delete users[socket.id];
+      console.log(`${username} disconnected`);
+    });
+  });
+
+  // Start HTTP server (Express + Apollo + Socket.IO)
+  const PORT = process.env.PORT || 4001;
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 GraphQL ready at http://localhost:${PORT}${server.graphqlPath}`);
+    console.log(`💬 Socket.IO running on ws://localhost:${PORT}`);
   });
 }
 
