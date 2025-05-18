@@ -1,7 +1,6 @@
 import { pool } from '../connection.js';
 
 class Message {
-  // Get all messages
   static async getAll() {
     try {
       const [rows] = await pool.query('SELECT * FROM messages');
@@ -12,7 +11,6 @@ class Message {
     }
   }
 
-  // Get message by ID
   static async getById(id) {
     try {
       const [rows] = await pool.query('SELECT * FROM messages WHERE id = ?', [id]);
@@ -23,7 +21,6 @@ class Message {
     }
   }
 
-  // Create a new message
   static async create({ sender_ID, recever_ID, payload }) {
     try {
       const [result] = await pool.query(
@@ -40,7 +37,6 @@ class Message {
     }
   }
 
-  // Delete a message
   static async delete(id) {
     try {
       const [result] = await pool.query('DELETE FROM messages WHERE id = ?', [id]);
@@ -51,7 +47,6 @@ class Message {
     }
   }
 
-  // Get sender of a message
   static async getSender(messageId) {
     try {
       const [rows] = await pool.query(`
@@ -66,7 +61,6 @@ class Message {
     }
   }
 
-  // Get receiver of a message
   static async getReceiver(messageId) {
     try {
       const [rows] = await pool.query(`
@@ -81,7 +75,6 @@ class Message {
     }
   }
 
-  // Get conversation between two users
   static async getConversation(user1Id, user2Id) {
     try {
       const [rows] = await pool.query(`

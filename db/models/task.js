@@ -1,7 +1,6 @@
 import { pool } from '../connection.js';
 
 class Task {
-  // Get all tasks
   static async getAll() {
     try {
       const [rows] = await pool.query('SELECT * FROM tasks');
@@ -12,7 +11,6 @@ class Task {
     }
   }
 
-  // Get task by ID
   static async getById(id) {
     try {
       const [rows] = await pool.query('SELECT * FROM tasks WHERE id = ?', [id]);
@@ -23,7 +21,6 @@ class Task {
     }
   }
 
-  // Create a new task
   static async create({ name, dueDate, status, description, project_ID, user_ID }) {
     try {
       const [result] = await pool.query(
@@ -39,7 +36,6 @@ class Task {
     }
   }
 
-  // Update a task
   static async update(id, { name, dueDate, status, description, project_ID, user_ID }) {
     try {
       let query = 'UPDATE tasks SET ';
@@ -92,7 +88,6 @@ class Task {
     }
   }
 
-  // Delete a task
   static async delete(id) {
     try {
       const [result] = await pool.query('DELETE FROM tasks WHERE id = ?', [id]);
@@ -103,7 +98,6 @@ class Task {
     }
   }
 
-  // Get user assigned to a task
   static async getUser(taskId) {
     try {
       const [rows] = await pool.query(`
@@ -118,7 +112,6 @@ class Task {
     }
   }
 
-  // Get project for a task
   static async getProject(taskId) {
     try {
       const [rows] = await pool.query(`

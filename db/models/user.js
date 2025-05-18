@@ -2,7 +2,6 @@ import { pool } from '../connection.js';
 import bcrypt from 'bcrypt';
 
 class User {
-  // Get all users
   static async getAll() {
     try {
       const [rows] = await pool.query('SELECT id, username, type, uid FROM users');
@@ -13,7 +12,6 @@ class User {
     }
   }
 
-  // Get user by ID
   static async getById(id) {
     try {
       const [rows] = await pool.query('SELECT id, username, type, uid FROM users WHERE id = ?', [id]);
@@ -24,16 +22,13 @@ class User {
     }
   }
 
-  // Create a new user
   static async create({ username, password, type, uid }) {
     try {
-      // Check if username already exists
       const existingUser = await this.findByUsername(username);
       if (existingUser) {
         throw new Error('Username already exists');
       }
       
-      // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const [result] = await pool.query(
@@ -49,10 +44,8 @@ class User {
     }
   }
 
-  // Update a user
   static async update(id, { username, password, type, uid }) {
     try {
-      // If username is being updated, check if it already exists for another user
       if (username) {
         const existingUser = await this.findByUsername(username);
         if (existingUser && existingUser.id !== parseInt(id)) {
@@ -85,9 +78,8 @@ class User {
         params.push(uid);
       }
 
-      // Only proceed with update if there are fields to update
       if (updates.length === 0) {
-        return this.getById(id); // Return current user if no updates
+        return this.getById(id); 
       }
 
       query += updates.join(', ') + ' WHERE id = ?';
@@ -103,13 +95,12 @@ class User {
     } catch (error) {
       console.error(`Error updating user with ID ${id}:`, error);
       if (error.message === 'Username already exists') {
-        throw error; // Rethrow the specific error
+        throw error; 
       }
       throw new Error('Failed to update user');
     }
   }
 
-  // Delete a user
   static async delete(id) {
     try {
       const [result] = await pool.query('DELETE FROM users WHERE id = ?', [id]);
@@ -120,7 +111,6 @@ class User {
     }
   }
 
-  // Find user by username
   static async findByUsername(username) {
     try {
       const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
@@ -131,7 +121,6 @@ class User {
     }
   }
 
-  // Update user token
   static async updateToken(id, token) {
     try {
       await pool.query('UPDATE users SET currentToken = ? WHERE id = ?', [token, id]);
@@ -142,7 +131,6 @@ class User {
     }
   }
 
-  // Get projects for a user
   static async getProjects(userId) {
     try {
       const [rows] = await pool.query(`
@@ -157,7 +145,6 @@ class User {
     }
   }
 
-  // Get tasks for a user
   static async getTasks(userId) {
     try {
       const [rows] = await pool.query('SELECT * FROM tasks WHERE user_ID = ?', [userId]);
@@ -168,7 +155,6 @@ class User {
     }
   }
 
-  // Get messages sent by a user
   static async getSentMessages(userId) {
     try {
       const [rows] = await pool.query('SELECT * FROM messages WHERE sender_ID = ?', [userId]);
@@ -179,7 +165,6 @@ class User {
     }
   }
 
-  // Get messages received by a user
   static async getReceivedMessages(userId) {
     try {
       const [rows] = await pool.query('SELECT * FROM messages WHERE recever_ID = ?', [userId]);

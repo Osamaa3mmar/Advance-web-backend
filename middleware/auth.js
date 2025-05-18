@@ -7,7 +7,6 @@ const getUser = (token) => {
   if (!token) return null;
   
   try {
-    // Remove "Bearer " prefix if present
     if (token.startsWith('Bearer ')) {
       token = token.slice(7);
     }

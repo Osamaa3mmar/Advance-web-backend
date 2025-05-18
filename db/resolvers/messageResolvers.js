@@ -19,7 +19,6 @@ const messageResolvers = {
         throw new Error('Not authenticated');
       }
       
-      // Users can only view conversations they're part of
       if (user.id !== parseInt(user1Id) && user.id !== parseInt(user2Id) && user.type !== 'admin') {
         throw new Error('Not authorized to view this conversation');
       }
@@ -33,7 +32,6 @@ const messageResolvers = {
         throw new Error('Not authenticated');
       }
       
-      // Users can only send messages as themselves
       if (user.id !== parseInt(input.sender_ID) && user.type !== 'admin') {
         throw new Error('Not authorized to send messages as another user');
       }
@@ -51,7 +49,6 @@ const messageResolvers = {
         throw new Error('Message not found');
       }
       
-      // Only the sender or an admin can delete a message
       if (user.id !== message.sender_ID && user.type !== 'admin') {
         throw new Error('Not authorized to delete this message');
       }

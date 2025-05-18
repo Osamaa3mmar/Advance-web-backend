@@ -37,7 +37,6 @@ const taskResolvers = {
         throw new Error('Task not found');
       }
       
-      // Only admin or the assigned user can update the task
       if (user.type !== 'admin' && user.id !== task.user_ID) {
         throw new Error('Not authorized to update this task');
       }
@@ -55,7 +54,6 @@ const taskResolvers = {
         throw new Error('Task not found');
       }
       
-      // Only admin can delete tasks
       if (user.type !== 'admin') {
         throw new Error('Not authorized to delete tasks');
       }

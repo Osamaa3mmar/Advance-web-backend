@@ -3,7 +3,6 @@ import projectResolvers from './projectResolvers.js';
 import taskResolvers from './taskResolvers.js';
 import messageResolvers from './messageResolvers.js';
 
-// Merge all resolvers
 const resolvers = {
   Query: {
     ...userResolvers.Query,

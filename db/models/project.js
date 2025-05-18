@@ -1,7 +1,6 @@
 import { pool } from '../connection.js';
 
 class Project {
-  // Get all projects
   static async getAll() {
     try {
       const [rows] = await pool.query('SELECT * FROM projects');
@@ -12,7 +11,6 @@ class Project {
     }
   }
 
-  // Get project by ID
   static async getById(id) {
     try {
       const [rows] = await pool.query('SELECT * FROM projects WHERE id = ?', [id]);
@@ -23,10 +21,8 @@ class Project {
     }
   }
 
-  // Create a new project
   static async create({ name, startDate, endDate, description, status, category }) {
     try {
-      // Validate dates
       const start = new Date(startDate);
       const end = new Date(endDate);
       
@@ -47,10 +43,8 @@ class Project {
     }
   }
 
-  // Update a project
   static async update(id, { name, startDate, endDate, description, status, category }) {
     try {
-      // If both dates are provided, validate them
       if (startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
@@ -59,7 +53,6 @@ class Project {
           throw new Error('Start date cannot be after end date');
         }
       } 
-      // If only one date is provided, we need to check against the existing date
       else if (startDate || endDate) {
         const project = await this.getById(id);
         if (!project) {
@@ -124,34 +117,26 @@ class Project {
     }
   }
 
-  // Delete a project
   static async delete(id) {
     try {
-      // Start a transaction
       await pool.query('START TRANSACTION');
       
-      // First, delete all tasks associated with the project
       await pool.query('DELETE FROM tasks WHERE project_ID = ?', [id]);
       
-      // Then, remove all user-project associations
       await pool.query('DELETE FROM user_project WHERE project_ID = ?', [id]);
       
-      // Finally, delete the project
       const [result] = await pool.query('DELETE FROM projects WHERE id = ?', [id]);
       
-      // Commit the transaction
       await pool.query('COMMIT');
       
       return result.affectedRows > 0;
     } catch (error) {
-      // Rollback in case of error
       await pool.query('ROLLBACK');
       console.error(`Error deleting project with ID ${id}:`, error);
       throw new Error('Failed to delete project');
     }
   }
 
-  // Get users assigned to a project
   static async getUsers(projectId) {
     try {
       const [rows] = await pool.query(`
@@ -166,7 +151,6 @@ class Project {
     }
   }
 
-  // Get tasks for a project
   static async getTasks(projectId) {
     try {
       const [rows] = await pool.query('SELECT * FROM tasks WHERE project_ID = ?', [projectId]);
@@ -177,7 +161,6 @@ class Project {
     }
   }
 
-  // Assign user to project
   static async assignUser(projectId, userId) {
     try {
       console.log(projectId, userId, "projectId, userId");
@@ -192,7 +175,6 @@ class Project {
     }
   }
 
-  // Remove user from project
   static async removeUser(projectId, userId) {
     try {
       const [result] = await pool.query(
